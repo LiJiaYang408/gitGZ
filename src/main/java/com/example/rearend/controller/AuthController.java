@@ -1,7 +1,11 @@
 package com.example.rearend.controller;
 
 
+import com.example.rearend.model.User;
 import com.example.rearend.service.UserService;
+import com.example.rearend.utils.JwtUtil;
+import com.example.rearend.utils.ResultUtil;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,14 +14,30 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     @Autowired
+    private JwtUtil jwtUtil;
+    @Autowired
     private UserService userService;
 
     @PostMapping("/login")
-    public String login(@RequestParam String username, @RequestParam String password) {
-        if (userService.validateUser(username, password)) {
-            return "Login successful!";
+    public ResultUtil login(@RequestBody User user, HttpServletResponse response) {
+        if (userService.validateUser(user.getUsername(), user.getPassword())) {
+            String token = jwtUtil.generateToken(user.getUsername());
+            response.setHeader("Authorization","Bearer"+token);
+            return ResultUtil.success();
         } else {
-            return "Invalid username or password!";
+            return ResultUtil.error("登录失败！");
         }
     }
+
+    @PostMapping("/Sign")
+    public ResultUtil login(@RequestBody User user){
+        User flag=userService.findByUsername(user.getUsername());
+        if (flag!=null){
+            userService.validateUser(user.getUsername(), user.getPassword());
+            return ResultUtil.success();
+        }else {
+            return ResultUtil.error("用户已存在");
+        }
+    }
+
 }

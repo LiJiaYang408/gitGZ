@@ -10,3 +10,8 @@ mybatis:
   type-aliases-package: com.example.demo.model
 server:
   port: 8088
+jwt:
+   secret: DeepReads
+   expiration: 3600 # 过期时间（秒）
+
+

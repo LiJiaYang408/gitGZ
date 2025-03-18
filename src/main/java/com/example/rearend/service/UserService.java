@@ -12,8 +12,8 @@ public class UserService {
     @Autowired
     private UserMapper userMapper;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+//    @Autowired
+//    private PasswordEncoder passwordEncoder;
 
     public User findByUsername(String username) {
         return userMapper.findByUsername(username);
@@ -21,6 +21,7 @@ public class UserService {
 
     public boolean validateUser(String username, String password) {
         User user = findByUsername(username);
-        return user != null && passwordEncoder.matches(password, user.getPassword());
+//        return user != null && passwordEncoder.matches(password, user.getPassword());
+        return user !=null && user.getPassword().equals(password);
     }
 }
