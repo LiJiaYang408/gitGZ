@@ -41,7 +41,7 @@ public class SecurityConfig {
                 // 配置请求权限
                 .authorizeHttpRequests(authorize -> authorize
                         // 允许公开访问的路径
-                        .requestMatchers("/api/auth/**").permitAll() // 登录和注册接口
+                        .requestMatchers("/api/auth/**","/table/*").permitAll() // 登录和注册接口
                         .requestMatchers("/public/**").permitAll()   // 公开资源
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Swagger 文档
 

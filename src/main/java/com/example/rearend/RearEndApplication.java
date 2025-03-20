@@ -12,5 +12,4 @@ public class RearEndApplication {
     public static void main(String[] args) {
         SpringApplication.run(RearEndApplication.class, args);
     }
-
 }
