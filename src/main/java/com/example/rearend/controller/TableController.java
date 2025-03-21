@@ -33,12 +33,12 @@ public class TableController {
         return ResultUtil.success(list);
     }
 
-    @GetMapping("/getMitochondrialDetailAndSiteInfo")
+    @GetMapping("/getMitochondrialAndSiteInfo")
     public ResultUtil getMitochondrialDetailAndSiteInfo(){
-        Map data=new HashMap();
+        Map<String, Object> data=new HashMap<>();
         List<MitochondrialDetail>sampleAll=tableService.getAllMitochondrialDetail();
         List<String>samples=new ArrayList<>();
-        Map chartDataMap=new HashMap();
+        Map<String, List<SiteInfo>> chartDataMap=new HashMap<>();
         for (MitochondrialDetail mitochondrialDetail : sampleAll) {
             List<SiteInfo> sample=tableService.getMitochondrialDetailDetails(mitochondrialDetail.getSample_name());
             chartDataMap.put(mitochondrialDetail.getSample_name(),sample);
