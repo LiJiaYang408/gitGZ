@@ -5,10 +5,7 @@ import com.example.rearend.model.SiteInfo;
 import com.example.rearend.service.TableService;
 import com.example.rearend.utils.ResultUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,4 +45,6 @@ public class TableController {
         data.put("samples",samples);
         return ResultUtil.success(data);
     }
+
 }
+
