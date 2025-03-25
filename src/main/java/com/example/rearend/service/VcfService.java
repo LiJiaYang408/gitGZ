@@ -1,6 +1,7 @@
 package com.example.rearend.service;
 
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -9,7 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Component
+@Service
 public class VcfService {
 
     public void processVcfFile(String inputFilePath, String outputFilePath) {

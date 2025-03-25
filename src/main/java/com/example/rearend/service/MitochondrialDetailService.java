@@ -1,20 +1,17 @@
-package com.example.rearend.mapper;
+package com.example.rearend.service;
 
 import com.example.rearend.model.MitochondrialDetail;
 import com.example.rearend.model.SiteInfo;
-import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
-@Mapper
-public interface TableMapper {
-
-    @Select("select * from mitochondrial_detail")
+public interface MitochondrialDetailService {
     List<MitochondrialDetail> getAllMitochondrialDetail();
 
-    @Select("select * from site_info where sample_name=#{name}")
     List<SiteInfo> getMitochondrialDetailDetails(@Param("name") String name);
 
+    Integer insert(MitochondrialDetail detail);
+
+    Integer selectDuplicateChecking(@Param("name")String name);
 }

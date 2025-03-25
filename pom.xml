@@ -97,7 +97,12 @@
             <version>0.9.1</version>
         </dependency>
 
-        <!-- Apache POI 用于解析 Excel 文件 -->
+        <!-- Apache POI -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>5.2.3</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
