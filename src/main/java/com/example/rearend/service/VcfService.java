@@ -1,6 +1,5 @@
 package com.example.rearend.service;
 
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -12,6 +11,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class VcfService {
+
+
 
     public void processVcfFile(String inputFilePath, String outputFilePath) {
         List<String> bassesList = readVcf(inputFilePath);

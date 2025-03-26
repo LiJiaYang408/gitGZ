@@ -1,7 +1,9 @@
 package com.example.rearend.controller;
 
+import com.example.rearend.model.DataComparisonTable;
 import com.example.rearend.model.MitochondrialDetail;
 import com.example.rearend.model.SiteInfo;
+import com.example.rearend.service.DataComparisonTableService;
 import com.example.rearend.service.MitochondrialDetailService;
 import com.example.rearend.service.SiteInfoService;
 import com.example.rearend.service.VcfService;
@@ -16,13 +18,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.*;
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api")
@@ -34,19 +35,22 @@ public class UploadController {
     private SiteInfoService siteInfoMapper;
     @Autowired
     private VcfService service;
+    @Autowired
+    private DataComparisonTableService dataComparisonTableService;
 
-    @Transactional
+
     @PostMapping("/upload")
-    public ResponseEntity<?> handleFileUpload(@RequestParam("file") MultipartFile file,String uploadType) {
+    public ResponseEntity<?> handleFileUpload(@RequestParam("file") MultipartFile file, String uploadType) {
 
-        if (Objects.equals(uploadType, "whole")){
+        if (Objects.equals(uploadType, "whole")) {
             return upload(file);
         }
         System.out.println(file.getOriginalFilename());
         return null;
     }
 
-    private ResponseEntity<Map<String, String>> upload(MultipartFile file){
+    @Transactional
+    ResponseEntity<Map<String, String>> upload(MultipartFile file) {
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
 
@@ -56,27 +60,22 @@ public class UploadController {
             String originalDataName = getCellValue(sampleRow.getCell(5)); // F列，索引5
 
             // 保存主表数据
-            MitochondrialDetail mitochondrialDetail=new MitochondrialDetail();
+            MitochondrialDetail mitochondrialDetail = new MitochondrialDetail();
             mitochondrialDetail.setSample_name(sampleName);
             mitochondrialDetail.setOriginal_data_name(originalDataName);
             mitochondrialDetail.setAnalysis_date(analysisDate);
 
-            Integer flag=detailMapper.selectDuplicateChecking(mitochondrialDetail.getSample_name());
-            if (flag>0){
-                return ResponseEntity.status(500).body(Map.of("message", "重复数据"));
-            }
-            detailMapper.insert(mitochondrialDetail);
-
-            System.out.println("样本名: " + sampleName);
-            System.out.println("分析日期: " + analysisDate);
-            System.out.println("原始数据名: " + originalDataName);
+            boolean flag = detailMapper.selectDuplicateChecking(mitochondrialDetail.getSample_name()) > 0;
+//            if (flag) {
+//                return ResponseEntity.status(500).body(Map.of("message", "重复数据"));
+//            }
 
 
             int siteRowStart = 6;
-            List<SiteInfo>siteInfos=new ArrayList<>();
+            List<SiteInfo> siteInfos = new ArrayList<>();
             for (int i = siteRowStart; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
-                SiteInfo siteInfo=new SiteInfo();
+                SiteInfo siteInfo = new SiteInfo();
                 if (row == null) continue;
 
                 // 碱基位置（A列，索引0）
@@ -100,26 +99,20 @@ public class UploadController {
                 siteInfo.setHeterogeneity(heterogeneity);
                 siteInfo.setType(type);
                 siteInfos.add(siteInfo);
-
-                System.out.println("碱基位置: " + basePosition);
-                System.out.println("参考碱基: " + referenceBase);
-                System.out.println("突变碱基: " + mutantBase);
-                System.out.println("总深度: " + totalDepth);
-                System.out.println("异质性: " + heterogeneity);
-                System.out.println("类型: " + type);
             }
 
-
-            for (SiteInfo siteInfo : siteInfos) {
-                siteInfoMapper.insert(siteInfo);
-            }
-
+            compareAndInsert(siteInfos);
+//            detailMapper.insert(mitochondrialDetail);
+//            for (SiteInfo siteInfo : siteInfos) {
+//                siteInfoMapper.insert(siteInfo);
+//            }
             return ResponseEntity.ok().body(Map.of("message", "数据解析成功"));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("message", "数据处理失败: " + e.getMessage()));
         }
     }
+
     private String getCellValue(Cell cell) {
         if (cell == null) return "";
         switch (cell.getCellType()) {
@@ -185,6 +178,43 @@ public class UploadController {
             return LocalDateTime.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private void compareAndInsert(List<SiteInfo> newSiteInfos) {
+
+        Map<String, Integer> detailNames = new HashMap<>();
+        List<MitochondrialDetail> allDetails = detailMapper.getAllMitochondrialDetail();
+
+
+        for (MitochondrialDetail detail : allDetails) {
+            List<SiteInfo> existingSiteInfos = detailMapper.getMitochondrialDetailDetails(detail.getSample_name());
+            Integer size = existingSiteInfos.size();
+            for (SiteInfo newSiteInfo : newSiteInfos) {
+                for (SiteInfo existingSiteInfo : existingSiteInfos) {
+                    if (!existingSiteInfo.getSample_name().equals(newSiteInfo.getSample_name())) {
+                        if (existingSiteInfo.getBase_position().equals(newSiteInfo.getBase_position())) {
+                            if (existingSiteInfo.getMutant_base().equals(newSiteInfo.getMutant_base())) {
+                                size--;
+                            }
+                        }
+                    }
+                }
+            }
+            detailNames.put(detail.getSample_name(), size);
+        }
+
+        for (String detailName : detailNames.keySet()) {
+            DataComparisonTable dataComparisonTable = new DataComparisonTable();
+            dataComparisonTable.setTarget_sample_name(newSiteInfos.get(0).getSample_name());
+            dataComparisonTable.setCompare_sample_name(detailName);
+            if (newSiteInfos.get(0).getSample_name().equals(detailName)){
+                dataComparisonTable.setStep(0);
+            }else {
+                dataComparisonTable.setStep(newSiteInfos.size() + detailNames.get(detailName));
+            }
+
+            dataComparisonTableService.insertDataComparison(dataComparisonTable);
         }
     }
 }

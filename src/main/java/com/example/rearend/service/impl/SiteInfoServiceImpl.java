@@ -6,6 +6,8 @@ import com.example.rearend.service.SiteInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class SiteInfoServiceImpl implements SiteInfoService {
     @Autowired
@@ -13,5 +15,10 @@ public class SiteInfoServiceImpl implements SiteInfoService {
     @Override
     public Integer insert(SiteInfo siteInfo) {
         return mapper.insert(siteInfo);
+    }
+
+    @Override
+    public List<SiteInfo> getAllSiteInfo() {
+        return mapper.getAllSiteInfo();
     }
 }
