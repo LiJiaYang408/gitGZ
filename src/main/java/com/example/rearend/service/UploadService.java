@@ -162,46 +162,49 @@ public class UploadService {
             return null;
         }
     }
-    public  List<SiteInfo> parseExampleFile(String filePath) {
+    public List<SiteInfo> parseExampleFile(String filePath) {
         List<SiteInfo> siteInfoList = new ArrayList<>();
-        Pattern pattern = Pattern.compile("(\\d+)(.*)");
+        Pattern pattern = Pattern.compile("(\\d+)(.*)"); // 优化：明确分割位置和参考碱基
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(";");
-                if (parts.length < 5) {
-                    continue; // 跳过不完整的行
+                if (parts.length < 6) { // 修正：检查是否有完整的6个字段
+                    continue;
                 }
 
-                // 解析第一个字段
+                // 解析第一个字段：位置+参考碱基
                 String firstPart = parts[0];
                 Matcher matcher = pattern.matcher(firstPart);
                 if (!matcher.matches()) {
-                    continue; // 无法解析的行跳过
+                    continue;
                 }
 
                 int basePosition = Integer.parseInt(matcher.group(1));
-                String mutantBase = matcher.group(2);
+                String referenceBase = matcher.group(2);
 
-                // 其他字段解析
-                String referenceBase = parts[1];
-                int totalDepth = Integer.parseInt(parts[2]);
-                BigDecimal heterogeneity = new BigDecimal(parts[3].replace("%", ""));
-                String type = parts[4];
+                // 字段顺序：parts[1]=变异碱基, parts[2]=类型, parts[3]=总深度, parts[4]=异质性%
+                String mutantBase = parts[1];
+                String type = parts[2];
+                int totalDepth = Integer.parseInt(parts[3]);
+                BigDecimal heterogeneity = new BigDecimal(parts[4].replace("%", ""));
 
-                // 创建SiteInfo对象并添加到列表
+
                 SiteInfo siteInfo = new SiteInfo();
                 siteInfo.setBase_position(basePosition);
                 siteInfo.setReference_base(referenceBase);
                 siteInfo.setMutant_base(mutantBase);
                 siteInfo.setTotal_depth(totalDepth);
                 siteInfo.setHeterogeneity(heterogeneity);
-                siteInfo.setType("SNP");
+                siteInfo.setType(type);
                 siteInfoList.add(siteInfo);
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (NumberFormatException e) {
+            // 处理数值转换异常（如总深度非数字）
+            System.err.println("解析数值失败: " + e.getMessage());
         }
 
         return siteInfoList;

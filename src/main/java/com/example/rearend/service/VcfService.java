@@ -1,8 +1,11 @@
 package com.example.rearend.service;
 
 import org.springframework.stereotype.Service;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -20,15 +23,11 @@ public class VcfService {
     private List<String> readVcf(String inputFilePath) {
         List<String> bassesList = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(inputFilePath))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                if (!line.startsWith("#")) {
-                    String basses = processVcfLine(line);
-                    if (basses != null) {
-                        bassesList.add(basses);
-                    }
-                }
-            }
+            br.lines()
+                    .filter(line -> !line.startsWith("#"))
+                    .map(this::processVcfLine)
+                    .filter(basses -> basses != null)
+                    .forEach(bassesList::add);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -38,8 +37,9 @@ public class VcfService {
     private String processVcfLine(String line) {
         String[] parts = line.split("\t");
         int pos = Integer.parseInt(parts[1]);
-        if (pos > 16569)
+        if (pos > 16569) {
             pos -= 16569;
+        }
         String ref = parts[3];
         String alt = parts[4];
         String filter = parts[6];
@@ -49,10 +49,19 @@ public class VcfService {
             return null; // 只处理 filter 为 "PASS" 的变体
         }
 
+        // 识别 SNP 和 INDEL
+        String variantType="SNP";
+        if (ref.length() == 1 && alt.length() == 1) {
+            variantType = "SNP";
+        } else if (ref.length() > 1 || alt.length() > 1) {
+            variantType = "INDEL";
+        }
+
         // 提取 DP 值
         int dp = Arrays.stream(info.split(";"))
                 .filter(infoPart -> infoPart.startsWith("DP="))
-                .map(infoPart -> Integer.parseInt(infoPart.substring(3)))
+                .map(infoPart -> infoPart.substring(3))
+                .mapToInt(Integer::parseInt)
                 .findFirst()
                 .orElse(0);
 
@@ -61,7 +70,9 @@ public class VcfService {
                 .filter(infoPart -> infoPart.startsWith("DP4="))
                 .map(infoPart -> infoPart.substring(4))
                 .flatMap(dp4Value -> Arrays.stream(dp4Value.split(",")))
-                .map(Integer::parseInt).toList();
+                .mapToInt(Integer::parseInt)
+                .boxed()
+                .toList();
 
         // 计算最大值和总和
         int maxDp4 = dp4.stream().max(Integer::compareTo).orElse(0);
@@ -73,18 +84,21 @@ public class VcfService {
                 .map(String::valueOf)
                 .collect(Collectors.joining(","));
 
-        return String.format("%s;%s;%d;%.2f%%;%s", pos + ref, alt, dp, percentage, dp4Sorted);
+        return String.format("%s;%s;%s;%d;%.2f%%;%s", pos + ref, alt, variantType, dp, percentage, dp4Sorted);
     }
 
     private void writeBassesListToTxt(List<String> bassesList, String outputFilePath) {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(outputFilePath))) {
-            for (String basses : bassesList) {
-                bw.write(basses);
-                bw.newLine();
-            }
+            bassesList.forEach(basses -> {
+                try {
+                    bw.write(basses);
+                    bw.newLine();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
 }
