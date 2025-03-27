@@ -12,8 +12,6 @@ import java.util.stream.Collectors;
 @Service
 public class VcfService {
 
-
-
     public void processVcfFile(String inputFilePath, String outputFilePath) {
         List<String> bassesList = readVcf(inputFilePath);
         writeBassesListToTxt(bassesList, outputFilePath);
@@ -88,4 +86,5 @@ public class VcfService {
             e.printStackTrace();
         }
     }
+
 }
