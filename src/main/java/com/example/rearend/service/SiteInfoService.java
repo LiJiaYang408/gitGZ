@@ -8,4 +8,6 @@ public interface SiteInfoService {
     Integer insert(SiteInfo siteInfo);
 
     List<SiteInfo> getAllSiteInfo();
+
+    void deleteByOriginalDataName(String originalDataName);
 }

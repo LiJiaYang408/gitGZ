@@ -49,7 +49,7 @@ public class CompareService {
         String redisKey = "compare:" + sampleName1 + ":" + sampleName2;
         // 先从 Redis 中获取结果
         String resultJson = redisTemplate.opsForValue().get(redisKey);
-        if (resultJson != null) {
+        if (resultJson != null&&!resultJson.equals("[]")) {
             try {
                 return objectMapper.readValue(resultJson, new TypeReference<List<CompareResult>>() {});
             } catch (Exception e) {

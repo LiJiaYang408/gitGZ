@@ -4,7 +4,10 @@
 
 
     <insert id="insert"  parameterType="com.example.rearend.model.SiteInfo">
-        INSERT INTO site_info (sample_name, base_position, reference_base, mutant_base, total_depth, heterogeneity, type)
-        VALUES (#{sample_name}, #{base_position}, #{reference_base}, #{mutant_base}, #{total_depth}, #{heterogeneity}, #{type})
+        INSERT INTO site_info (original_data_name, base_position, reference_base, mutant_base, total_depth, heterogeneity, type)
+        VALUES (#{original_data_name}, #{base_position}, #{reference_base}, #{mutant_base}, #{total_depth}, #{heterogeneity}, #{type})
     </insert>
+    <delete id="deleteByOriginalDataName">
+        DELETE FROM site_info WHERE original_data_name = #{originalDataName}
+    </delete>
 </mapper>

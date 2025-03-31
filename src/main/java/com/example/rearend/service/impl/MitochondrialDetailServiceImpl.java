@@ -35,4 +35,14 @@ public class MitochondrialDetailServiceImpl implements MitochondrialDetailServic
         return mitochondrialDetailMapper.selectDuplicateChecking(name);
     }
 
+    @Override
+    public void update(MitochondrialDetail mitochondrialDetail) {
+        mitochondrialDetailMapper.update(mitochondrialDetail);
+    }
+
+    @Override
+    public MitochondrialDetail findByOriginalDataName(String originalDataName) {
+        return mitochondrialDetailMapper.findByOriginalDataName(originalDataName);
+    }
+
 }

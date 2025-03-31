@@ -14,4 +14,8 @@ public interface MitochondrialDetailService {
     Integer insert(MitochondrialDetail detail);
 
     Integer selectDuplicateChecking(@Param("name")String name);
+
+    void update(MitochondrialDetail mitochondrialDetail);
+
+    MitochondrialDetail findByOriginalDataName(String originalDataName);
 }

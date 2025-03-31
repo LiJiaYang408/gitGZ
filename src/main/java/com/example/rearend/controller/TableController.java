@@ -29,6 +29,11 @@ public class TableController {
         List<SiteInfo>list= mitochondrialDetailService.getMitochondrialDetailDetails(name);
         return ResultUtil.success(list);
     }
+    @GetMapping("/getCountName")
+    public ResultUtil getCountName(@RequestParam String name){
+        Integer i=mitochondrialDetailService.selectDuplicateChecking(name);
+        return ResultUtil.success(i);
+    }
 
     @GetMapping("/getMitochondrialAndSiteInfo")
     public ResultUtil getMitochondrialDetailAndSiteInfo(){
@@ -37,7 +42,7 @@ public class TableController {
         List<String>samples=new ArrayList<>();
         Map<String, List<SiteInfo>> chartDataMap=new HashMap<>();
         for (MitochondrialDetail mitochondrialDetail : sampleAll) {
-            List<SiteInfo> sample= mitochondrialDetailService.getMitochondrialDetailDetails(mitochondrialDetail.getSample_name());
+            List<SiteInfo> sample= mitochondrialDetailService.getMitochondrialDetailDetails(mitochondrialDetail.getOriginal_data_name());
             chartDataMap.put(mitochondrialDetail.getSample_name(),sample);
             samples.add(mitochondrialDetail.getSample_name());
         }

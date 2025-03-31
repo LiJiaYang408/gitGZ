@@ -14,7 +14,7 @@ public interface MitochondrialDetailMapper {
     @Select("select * from mitochondrial_detail")
     List<MitochondrialDetail> getAllMitochondrialDetail();
 
-    @Select("select * from site_info where sample_name=#{name}")
+    @Select("select * from site_info where original_data_name=#{name}")
     List<SiteInfo> getMitochondrialDetailDetails(@Param("name") String name);
 
     /**
@@ -23,6 +23,10 @@ public interface MitochondrialDetailMapper {
      */
     Integer insert(MitochondrialDetail detail);
 
-    @Select("select count(*) from mitochondrial_detail where sample_name=#{name}")
+    @Select("select count(*) from mitochondrial_detail where original_data_name=#{name}")
     Integer selectDuplicateChecking(@Param("name")String name);
+
+    void update(MitochondrialDetail mitochondrialDetail);
+
+    MitochondrialDetail findByOriginalDataName(String originalDataName);
 }

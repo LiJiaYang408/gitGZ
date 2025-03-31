@@ -21,4 +21,9 @@ public class SiteInfoServiceImpl implements SiteInfoService {
     public List<SiteInfo> getAllSiteInfo() {
         return mapper.getAllSiteInfo();
     }
+
+    @Override
+    public void deleteByOriginalDataName(String originalDataName) {
+        mapper.deleteByOriginalDataName(originalDataName);
+    }
 }

@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 @Data
 public class SiteInfo {
     private Integer id;
-    private String sample_name;
+    private String original_data_name;
     private Integer base_position;
     private String reference_base;
     private String mutant_base;

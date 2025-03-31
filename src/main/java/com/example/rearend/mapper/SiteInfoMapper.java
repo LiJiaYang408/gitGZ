@@ -16,4 +16,6 @@ public interface SiteInfoMapper {
 
     @Select("select * from site_info")
     List<SiteInfo>getAllSiteInfo();
+
+    void deleteByOriginalDataName(String originalDataName);
 }

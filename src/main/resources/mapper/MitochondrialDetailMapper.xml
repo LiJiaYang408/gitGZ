@@ -6,4 +6,13 @@
         INSERT INTO mitochondrial_detail (sample_name, analysis_date, original_data_name)
         VALUES (#{sample_name}, #{analysis_date}, #{original_data_name})
     </insert>
+    <update id="update">
+        UPDATE mitochondrial_detail
+        SET analysis_date = #{analysis_date}
+        WHERE original_data_name = #{original_data_name}
+    </update>
+
+    <select id="findByOriginalDataName" resultType="com.example.rearend.model.MitochondrialDetail">
+        SELECT * FROM mitochondrial_detail WHERE original_data_name = #{originalDataName}
+    </select>
 </mapper>

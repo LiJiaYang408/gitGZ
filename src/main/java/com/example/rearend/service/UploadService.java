@@ -2,6 +2,8 @@ package com.example.rearend.service;
 
 import com.example.rearend.model.MitochondrialDetail;
 import com.example.rearend.model.SiteInfo;
+import com.example.rearend.utils.FileNameUtils;
+import com.example.rearend.utils.MultipartFileExample;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,8 +31,46 @@ public class UploadService {
     private MitochondrialDetailService detailMapper;
     @Autowired
     private SiteInfoService siteInfoMapper;
+    @Autowired
+    private VcfService service;
+    @Autowired
+    private MitochondrialDetailService detailService;
 
-    @Transactional
+    public ResponseEntity<Map<String, String>> uploadVcf(MultipartFile[] files) {
+        try {
+            for (MultipartFile file : files) {
+                String fileName = FileNameUtils.getFileNameWithoutExtension(file);
+                service.processVcfFile(MultipartFileExample.getTempFilePath(file), "example.txt");
+                List<SiteInfo> siteInfos = parseExampleFile("example.txt");
+                MitochondrialDetail mitochondrialDetail = new MitochondrialDetail();
+                mitochondrialDetail.setSample_name(fileName);
+                mitochondrialDetail.setAnalysis_date(LocalDateTime.now());
+                mitochondrialDetail.setOriginal_data_name(fileName);
+
+                // 检查是否存在相同原始样本名的数据
+                MitochondrialDetail existingDetail = detailMapper.findByOriginalDataName(fileName);
+                if (existingDetail != null) {
+                    // 更新分析日期
+                    existingDetail.setAnalysis_date(mitochondrialDetail.getAnalysis_date());
+                    detailMapper.update(existingDetail);
+                    // 删除相关的位点信息
+                    siteInfoMapper.deleteByOriginalDataName(fileName);
+                } else {
+                    detailService.insert(mitochondrialDetail);
+                }
+
+                for (SiteInfo siteInfo : siteInfos) {
+                    siteInfo.setOriginal_data_name(fileName);
+                    siteInfoMapper.insert(siteInfo);
+                }
+            }
+            return ResponseEntity.ok().body(Map.of("message", "所有 VCF 文件数据解析成功"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("message", "数据处理失败: " + e.getMessage()));
+        }
+    }
+
     public ResponseEntity<Map<String, String>> upload(MultipartFile file) {
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -40,15 +80,27 @@ public class UploadService {
             LocalDateTime analysisDate = parseDate(sampleRow.getCell(3)); // D列，索引3
             String originalDataName = getCellValue(sampleRow.getCell(5)); // F列，索引5
 
-            // 保存主表数据
-            MitochondrialDetail mitochondrialDetail = new MitochondrialDetail();
-            mitochondrialDetail.setSample_name(sampleName);
-            mitochondrialDetail.setOriginal_data_name(originalDataName);
-            mitochondrialDetail.setAnalysis_date(analysisDate);
+            // 检查是否存在相同原始样本名的数据
+            MitochondrialDetail existingDetail = detailMapper.findByOriginalDataName(originalDataName);
+            if (existingDetail != null) {
+                // 更新分析日期
+                existingDetail.setAnalysis_date(analysisDate);
+                detailMapper.update(existingDetail);
+                // 删除相关的位点信息
+                siteInfoMapper.deleteByOriginalDataName(originalDataName);
+            } else {
+                // 保存主表数据
+                MitochondrialDetail mitochondrialDetail = new MitochondrialDetail();
+                mitochondrialDetail.setSample_name(sampleName);
+                mitochondrialDetail.setOriginal_data_name(originalDataName);
+                mitochondrialDetail.setAnalysis_date(analysisDate);
 
-            boolean flag = detailMapper.selectDuplicateChecking(mitochondrialDetail.getSample_name()) > 0;
-            if (flag){
-                return ResponseEntity.status(500).body(Map.of("message", "已有重复数据"));
+                boolean flag = detailMapper.selectDuplicateChecking(mitochondrialDetail.getSample_name()) > 0;
+                if (flag) {
+                    return ResponseEntity.status(500).body(Map.of("message", "已有重复数据"));
+                }
+
+                detailMapper.insert(mitochondrialDetail);
             }
 
             int siteRowStart = 6;
@@ -69,9 +121,8 @@ public class UploadService {
                 // 异质性（F列，索引5）
                 BigDecimal heterogeneity = getCellValueAsBigDecimal(row.getCell(4));
                 // 类型（G列，索引6）
-
                 String type = getCellValue(row.getCell(5));
-                siteInfo.setSample_name(mitochondrialDetail.getSample_name());
+                siteInfo.setOriginal_data_name(originalDataName);
                 siteInfo.setTotal_depth(totalDepth);
                 siteInfo.setReference_base(referenceBase);
                 siteInfo.setMutant_base(mutantBase);
@@ -81,12 +132,9 @@ public class UploadService {
                 siteInfos.add(siteInfo);
             }
 
-
-                detailMapper.insert(mitochondrialDetail);
-                for (SiteInfo siteInfo : siteInfos) {
-                    siteInfoMapper.insert(siteInfo);
-                }
-
+            for (SiteInfo siteInfo : siteInfos) {
+                siteInfoMapper.insert(siteInfo);
+            }
 
             return ResponseEntity.ok().body(Map.of("message", "数据解析成功"));
         } catch (Exception e) {
@@ -162,6 +210,7 @@ public class UploadService {
             return null;
         }
     }
+
     public List<SiteInfo> parseExampleFile(String filePath) {
         List<SiteInfo> siteInfoList = new ArrayList<>();
         Pattern pattern = Pattern.compile("(\\d+)(.*)"); // 优化：明确分割位置和参考碱基
@@ -189,7 +238,6 @@ public class UploadService {
                 String type = parts[2];
                 int totalDepth = Integer.parseInt(parts[3]);
                 BigDecimal heterogeneity = new BigDecimal(parts[4].replace("%", ""));
-
 
                 SiteInfo siteInfo = new SiteInfo();
                 siteInfo.setBase_position(basePosition);
