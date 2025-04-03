@@ -1,4 +1,5 @@
 package com.example.rearend.service;
+import com.example.rearend.model.MitochondrialDetail;
 import com.example.rearend.model.SiteInfo;
 import com.example.rearend.utils.CompareResult;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -17,7 +18,8 @@ public class CompareService {
     private StringRedisTemplate redisTemplate;
     @Autowired
     private MitochondrialDetailService mitochondrialDetailService;
-
+    @Autowired
+    private RecordsService recordsService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<Map<String, Object>> getMitochondrialDetailDetails(String name) {
@@ -46,6 +48,12 @@ public class CompareService {
     }
 
     public List<CompareResult> compareData(String sampleName1, String sampleName2) {
+        //记录
+        List<SiteInfo>siteInfos=mitochondrialDetailService.getMitochondrialDetailDetails(sampleName1);
+        MitochondrialDetail mitochondrialDetail1=mitochondrialDetailService.findByOriginalDataName(sampleName1);
+        MitochondrialDetail mitochondrialDetail2=mitochondrialDetailService.findByOriginalDataName(sampleName2);
+        recordsService.Comparison(siteInfos,mitochondrialDetail1,mitochondrialDetail2);
+
         String redisKey = "compare:" + sampleName1 + ":" + sampleName2;
         // 先从 Redis 中获取结果
         String resultJson = redisTemplate.opsForValue().get(redisKey);
@@ -56,6 +64,9 @@ public class CompareService {
                 e.printStackTrace();
             }
         }
+
+
+
 
         List<Map<String, Object>> targetData = getMitochondrialDetailDetails(sampleName1);
         List<Map<String, Object>> dbData = getMitochondrialDetailDetails(sampleName2);
@@ -115,4 +126,5 @@ public class CompareService {
         }
         return compareResult;
     }
+
 }

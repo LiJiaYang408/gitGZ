@@ -9,7 +9,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
@@ -36,9 +35,12 @@ public class UploadService {
     @Autowired
     private MitochondrialDetailService detailService;
 
-    public ResponseEntity<Map<String, String>> uploadVcf(MultipartFile[] files) {
+    @Autowired
+    private RecordsService recordsService;
+
+    public ResponseEntity<Map<String, String>> uploadVcf(MultipartFile file) {
         try {
-            for (MultipartFile file : files) {
+
                 String fileName = FileNameUtils.getFileNameWithoutExtension(file);
                 service.processVcfFile(MultipartFileExample.getTempFilePath(file), "example.txt");
                 List<SiteInfo> siteInfos = parseExampleFile("example.txt");
@@ -63,7 +65,6 @@ public class UploadService {
                     siteInfo.setOriginal_data_name(fileName);
                     siteInfoMapper.insert(siteInfo);
                 }
-            }
             return ResponseEntity.ok().body(Map.of("message", "所有 VCF 文件数据解析成功"));
         } catch (Exception e) {
             e.printStackTrace();
@@ -143,7 +144,7 @@ public class UploadService {
         }
     }
 
-    private String getCellValue(Cell cell) {
+    public String getCellValue(Cell cell) {
         if (cell == null) return "";
         switch (cell.getCellType()) {
             case STRING:

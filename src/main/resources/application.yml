@@ -13,16 +13,15 @@ spring:
           max-active: 10
           max-idle: 5
           min-idle: 2
-  security:
-    user:
-      name: username
-      password: password
+  web:
+    resources:
+      static-locations: classpath:/dist/
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.example.demo.model
 server:
-  port: 8088
+  port: 5028
 jwt:
    secret: DeepReads
    expiration: 3600 # 过期时间（秒）

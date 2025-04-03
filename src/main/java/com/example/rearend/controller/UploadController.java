@@ -28,7 +28,11 @@ public class UploadController {
                 upload.upload(file);
             }
             return ResponseEntity.ok().body(Map.of("message", "所有 Excel 文件上传成功"));
+        } else {
+            for (MultipartFile file : files) {
+                upload.uploadVcf(file);
+            }
+            return ResponseEntity.ok().body(Map.of("message", "所有 vcf 文件上传成功"));
         }
-       return upload.uploadVcf(files);
     }
 }

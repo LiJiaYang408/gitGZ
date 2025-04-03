@@ -48,10 +48,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
+
 
         <!-- MyBatis + MySQL -->
         <dependency>
@@ -126,8 +123,6 @@
         </dependency>
     </dependencies>
 
-
-
     <build>
         <plugins>
             <plugin>
@@ -139,8 +134,13 @@
                     <target>17</target>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.example.rearend.RearEndApplication</mainClass>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
-
-
 </project>
