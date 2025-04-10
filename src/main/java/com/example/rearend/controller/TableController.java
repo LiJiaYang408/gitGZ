@@ -4,7 +4,7 @@ import com.example.rearend.model.MitochondrialDetail;
 import com.example.rearend.model.SiteInfo;
 import com.example.rearend.service.MitochondrialDetailService;
 import com.example.rearend.utils.ResultUtil;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -15,28 +15,32 @@ import java.util.Map;
 @RestController
 @RequestMapping("/table")
 public class TableController {
-    @Autowired
-    private MitochondrialDetailService mitochondrialDetailService;
+
+    private final MitochondrialDetailService mitochondrialDetailService;
+
+    public TableController(MitochondrialDetailService mitochondrialDetailService) {
+        this.mitochondrialDetailService = mitochondrialDetailService;
+    }
 
     @GetMapping("/getMitochondrialDetailAll")
-    public ResultUtil getMitochondrialDetailAll(){
+    public ResultUtil<List<MitochondrialDetail>> getMitochondrialDetailAll(){
         List<MitochondrialDetail>list= mitochondrialDetailService.getAllMitochondrialDetail();
         return ResultUtil.success(list);
     }
 
     @GetMapping("/getMitochondrialDetailDetails")
-    public ResultUtil getMitochondrialDetailDetails(@RequestParam String name){
+    public ResultUtil<List<SiteInfo>> getMitochondrialDetailDetails(@RequestParam String name){
         List<SiteInfo>list= mitochondrialDetailService.getMitochondrialDetailDetails(name);
         return ResultUtil.success(list);
     }
     @GetMapping("/getCountName")
-    public ResultUtil getCountName(@RequestParam String name){
+    public ResultUtil<Integer> getCountName(@RequestParam String name){
         Integer i=mitochondrialDetailService.selectDuplicateChecking(name);
         return ResultUtil.success(i);
     }
 
     @GetMapping("/getMitochondrialAndSiteInfo")
-    public ResultUtil getMitochondrialDetailAndSiteInfo(){
+    public ResultUtil< Map<String, Object>> getMitochondrialDetailAndSiteInfo(){
         Map<String, Object> data=new HashMap<>();
         List<MitochondrialDetail>sampleAll= mitochondrialDetailService.getAllMitochondrialDetail();
         List<String>samples=new ArrayList<>();

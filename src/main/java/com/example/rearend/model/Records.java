@@ -13,4 +13,5 @@ public class Records {
     private LocalDateTime time;
     private String original_goal;
     private String original_compare;
+    private int status;
 }

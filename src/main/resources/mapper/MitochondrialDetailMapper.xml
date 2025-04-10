@@ -8,11 +8,21 @@
     </insert>
     <update id="update">
         UPDATE mitochondrial_detail
-        SET analysis_date = #{analysis_date}
+        <set>
+            <if test="sample_name != null">
+                sample_name = #{sample_name},
+            </if>
+            <if test="analysis_date != null">
+                analysis_date = #{analysis_date},
+            </if>
+            <if test="original_data_name != null">
+                original_data_name = #{original_data_name}
+            </if>
+        </set>
         WHERE original_data_name = #{original_data_name}
     </update>
 
     <select id="findByOriginalDataName" resultType="com.example.rearend.model.MitochondrialDetail">
-        SELECT * FROM mitochondrial_detail WHERE original_data_name = #{originalDataName}
+        SELECT original_data_name, sample_name, analysis_date FROM mitochondrial_detail WHERE original_data_name = #{originalDataName}
     </select>
 </mapper>

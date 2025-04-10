@@ -6,10 +6,7 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,7 +23,7 @@ public class VcfService {
             br.lines()
                     .filter(line -> !line.startsWith("#"))
                     .map(this::processVcfLine)
-                    .filter(basses -> basses != null)
+                    .filter(Objects::nonNull)
                     .forEach(bassesList::add);
         } catch (IOException e) {
             e.printStackTrace();

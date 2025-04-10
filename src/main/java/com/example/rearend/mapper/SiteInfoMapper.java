@@ -14,7 +14,7 @@ public interface SiteInfoMapper {
      */
     Integer insert(SiteInfo siteInfo);
 
-    @Select("select * from site_info")
+    @Select("SELECT `id`, `original_data_name`, `base_position`, `reference_base`, `mutant_base`, `total_depth`, `heterogeneity`, `type` FROM `site_info`;")
     List<SiteInfo>getAllSiteInfo();
 
     void deleteByOriginalDataName(String originalDataName);

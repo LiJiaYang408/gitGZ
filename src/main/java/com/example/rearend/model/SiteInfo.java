@@ -14,5 +14,6 @@ public class SiteInfo {
     private Integer total_depth;
     private BigDecimal heterogeneity;
     private String type;
+    private String sample_name;
 
 }

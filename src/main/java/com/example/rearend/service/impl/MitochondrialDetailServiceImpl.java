@@ -4,7 +4,6 @@ import com.example.rearend.mapper.MitochondrialDetailMapper;
 import com.example.rearend.model.MitochondrialDetail;
 import com.example.rearend.model.SiteInfo;
 import com.example.rearend.service.MitochondrialDetailService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,8 +11,11 @@ import java.util.List;
 @Service
 public class MitochondrialDetailServiceImpl implements MitochondrialDetailService {
 
-    @Autowired
-    private MitochondrialDetailMapper mitochondrialDetailMapper;
+    private final MitochondrialDetailMapper mitochondrialDetailMapper;
+
+    public MitochondrialDetailServiceImpl(MitochondrialDetailMapper mitochondrialDetailMapper) {
+        this.mitochondrialDetailMapper = mitochondrialDetailMapper;
+    }
 
     @Override
     public List<MitochondrialDetail> getAllMitochondrialDetail() {

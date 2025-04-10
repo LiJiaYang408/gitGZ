@@ -11,10 +11,10 @@ import java.util.List;
 @Mapper
 public interface MitochondrialDetailMapper {
 
-    @Select("select * from mitochondrial_detail")
+    @Select("select original_data_name, sample_name, analysis_date from mitochondrial_detail")
     List<MitochondrialDetail> getAllMitochondrialDetail();
 
-    @Select("select * from site_info where original_data_name=#{name}")
+    @Select("select  `id`, `original_data_name`, `base_position`, `reference_base`, `mutant_base`, `total_depth`, `heterogeneity`, `type` from site_info where original_data_name=#{name}")
     List<SiteInfo> getMitochondrialDetailDetails(@Param("name") String name);
 
     /**
