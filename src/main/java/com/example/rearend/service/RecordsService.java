@@ -13,7 +13,7 @@ public interface RecordsService {
     int insert(Records records);
 
     Records Comparison(List<SiteInfo>list, MitochondrialDetail mit, MitochondrialDetail detail,List<SiteInfo> list2);
-    Records Compare(List<SiteInfo>list, MitochondrialDetail mit, MitochondrialDetail detail);
+    Records Compare(List<SiteInfo>list, MitochondrialDetail mit, MitochondrialDetail detail,int num);
 
     List<Records> findAll();
 }

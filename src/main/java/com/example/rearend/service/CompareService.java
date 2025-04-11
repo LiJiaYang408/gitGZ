@@ -115,7 +115,7 @@ public class CompareService {
      * @param list2 第二个 SiteInfo 列表
      * @return 比较结果列表
      */
-    public List<CompareResult> complexityCompareData(List<SiteInfo> list1, List<SiteInfo> list2) {
+    public List<CompareResult> complexityCompareData(List<SiteInfo> list1, List<SiteInfo> list2,boolean flag) {
         // 初始化线粒体详细信息
         MitochondrialDetail mitochondrialDetail1 = new MitochondrialDetail();
         mitochondrialDetail1.setSample_name(list1.get(0).getSample_name());
@@ -125,8 +125,9 @@ public class CompareService {
         mitochondrialDetail2.setOriginal_data_name(list2.get(0).getOriginal_data_name());
 
         // 记录比较信息
-        recordsService.Comparison(list1, mitochondrialDetail1, mitochondrialDetail2, list2);
-
+        if (flag) {
+            recordsService.Comparison(list1, mitochondrialDetail1, mitochondrialDetail2, list2);
+        }
         String redisKey = "complexity:" + list1.get(0).getOriginal_data_name() + ":" + list2.get(0).getOriginal_data_name();
 
         List<Map<String, Object>> targetData = convertToMapList(list1);

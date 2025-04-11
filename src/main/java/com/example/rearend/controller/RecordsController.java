@@ -37,7 +37,7 @@ public class RecordsController {
 
     @PostMapping("/upload")
     @Transactional(rollbackFor = Exception.class) // 添加事务注解
-    public ResultUtil<List<Records>> upload(@RequestParam("file") MultipartFile file, String uploadType) throws IOException {
+    public ResultUtil<List<Records>> upload(@RequestParam("file") MultipartFile file, String uploadType,int num) throws IOException {
         String fileName = null;
         if (Objects.equals(uploadType, "whole")) {
             Workbook workbook = new XSSFWorkbook(file.getInputStream());
@@ -54,7 +54,7 @@ public class RecordsController {
         List<MitochondrialDetail>details=detailMapper.getAllMitochondrialDetail();
         List<Records>recordsList=new ArrayList<>();
         for (MitochondrialDetail detail : details) {
-            Records records1=recordsService.Compare(siteInfoList,mitochondrialDetail,detail);
+            Records records1=recordsService.Compare(siteInfoList,mitochondrialDetail,detail,num);
             if (records1.getCompare_name()!=null) {
                 recordsList.add(records1);
             }

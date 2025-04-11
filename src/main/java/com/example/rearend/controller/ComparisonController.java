@@ -36,7 +36,8 @@ public class ComparisonController {
     public List<CompareResult> complexityCompare(@RequestParam String sampleName1,
                                                  @RequestParam String name1,
                                                  @RequestParam String sampleName2,
-                                                 @RequestParam String name2) {
+                                                 @RequestParam String name2,
+                                                 @RequestParam(defaultValue = "true",required = false) boolean flag) {
         List<SiteInfo>list1;
         if (sampleName1.equals("null")){
             list1=compareService.convertToSiteInfoList(compareService.getParsedDataFromRedis(name1));
@@ -53,7 +54,7 @@ public class ComparisonController {
         }
 
 
-        return compareService.complexityCompareData(list1,list2);
+        return compareService.complexityCompareData(list1,list2,flag);
     }
     @GetMapping("/getMitochondrialDetailDetails")
     public ResultUtil<List<SiteInfo>> getMitochondrialDetailDetails(@RequestParam String name,@RequestParam String name2){

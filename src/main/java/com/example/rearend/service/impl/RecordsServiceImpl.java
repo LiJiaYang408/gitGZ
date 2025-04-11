@@ -88,14 +88,14 @@ public class RecordsServiceImpl implements RecordsService {
      * @return 创建的 Records 对象，如果不满足条件则返回空属性的 Records 对象
      */
     @Override
-    public Records Compare(List<SiteInfo> list, MitochondrialDetail mit, MitochondrialDetail detail) {
+    public Records Compare(List<SiteInfo> list, MitochondrialDetail mit, MitochondrialDetail detail,int num1) {
         Records records = new Records();
         List<SiteInfo> siteInfoList = detailMapper.getMitochondrialDetailDetails(detail.getOriginal_data_name());
 
         int num = calculateMatchingCount(siteInfoList, list);
         int result = calculateAllowance(siteInfoList, list, num);
 
-        if (shouldCreateRecord(result, siteInfoList, list, 10)) {
+        if (shouldCreateRecord(result, siteInfoList, list, num1)) {
             setupRecord(records, mit, detail, result);
             insert(records);
         }
