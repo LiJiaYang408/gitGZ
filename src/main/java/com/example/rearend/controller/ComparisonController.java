@@ -66,4 +66,31 @@ public class ComparisonController {
         }
         return ResultUtil.success(list);
     }
+
+
+
+    @GetMapping("/getSiteListCount")
+    public ResultUtil<Boolean> getSiteListCount(@RequestParam String sampleName1,
+                                                @RequestParam String name1,
+                                                @RequestParam String sampleName2,
+                                                @RequestParam String name2) {
+        List<SiteInfo>list1;
+        if (sampleName1.equals("null")){
+            list1=compareService.convertToSiteInfoList(compareService.getParsedDataFromRedis(name1));
+        }else {
+            list1=mitochondrialDetailService.getMitochondrialDetailDetails(sampleName1);
+        }
+        List<SiteInfo>list2;
+        if (sampleName2.equals("null")){
+            list2=compareService.convertToSiteInfoList(compareService.getParsedDataFromRedis(name2));
+        }else {
+            list2=mitochondrialDetailService.getMitochondrialDetailDetails(sampleName2);
+        }
+
+        boolean flag= list1.size() != 0 && list2.size() != 0;
+
+        flag= !flag;
+
+        return ResultUtil.success(flag);
+    }
 }
