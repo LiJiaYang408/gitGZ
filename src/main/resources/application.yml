@@ -24,9 +24,5 @@ mybatis:
 server:
   port: 5028
 
-jasypt:
-  encryptor:
-    password: deep reads
-
 
 
