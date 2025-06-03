@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +28,7 @@ public class ComparisonController {
 
     //简单比对
     @GetMapping("/compare")
-    public List<CompareResult> compare(@RequestParam String sampleName1, @RequestParam String sampleName2) {
+    public List<CompareResult> compare(@RequestParam String sampleName1, @RequestParam String sampleName2) throws IOException {
         return compareService.compareData(sampleName1, sampleName2);
     }
 
@@ -37,7 +38,7 @@ public class ComparisonController {
                                                  @RequestParam String name1,
                                                  @RequestParam String sampleName2,
                                                  @RequestParam String name2,
-                                                 @RequestParam(defaultValue = "true",required = false) boolean flag) {
+                                                 @RequestParam(defaultValue = "true",required = false) boolean flag) throws IOException {
         List<SiteInfo>list1;
         if (sampleName1.equals("null")){
             list1=compareService.convertToSiteInfoList(compareService.getParsedDataFromRedis(name1));
@@ -56,6 +57,7 @@ public class ComparisonController {
 
         return compareService.complexityCompareData(list1,list2,flag);
     }
+
     @GetMapping("/getMitochondrialDetailDetails")
     public ResultUtil<List<SiteInfo>> getMitochondrialDetailDetails(@RequestParam String name,@RequestParam String name2){
         List<SiteInfo>list;

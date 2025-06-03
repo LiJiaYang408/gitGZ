@@ -3,14 +3,18 @@ package com.example.rearend.service;
 import com.example.rearend.model.MitochondrialDetail;
 import com.example.rearend.model.SiteInfo;
 import com.example.rearend.utils.DataParser;
+import com.example.rearend.utils.DateUtils;
 import com.example.rearend.utils.FileNameUtils;
 import com.example.rearend.utils.MultipartFileExample;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.text.ParseException;
 import java.time.LocalDateTime;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -29,14 +33,14 @@ public class UploadService {
         this.detailService = detailService;
     }
 
-    public ResponseEntity<Map<String, String>> uploadVcf(MultipartFile file) {
-        try {
+    public ResponseEntity<Map<String, String>> uploadVcf(MultipartFile file) throws ParseException {
+
             String fileName = FileNameUtils.getFileNameWithoutExtension(file);
             service.processVcfFile(MultipartFileExample.getTempFilePath(file), "example.txt");
             List<SiteInfo> siteInfos = DataParser.parseExampleFile("example.txt");
             MitochondrialDetail mitochondrialDetail = new MitochondrialDetail();
             mitochondrialDetail.setSample_name(fileName);
-            mitochondrialDetail.setAnalysis_date(LocalDateTime.now());
+            mitochondrialDetail.setAnalysis_date(DateUtils.getDate());
             mitochondrialDetail.setOriginal_data_name(fileName);
 
             // 检查是否存在相同原始样本名的数据
@@ -56,14 +60,10 @@ public class UploadService {
                 siteInfoMapper.insert(siteInfo);
             }
             return ResponseEntity.ok().body(Map.of("message", "所有 VCF 文件数据解析成功"));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("message", "数据处理失败: " + e.getMessage()));
-        }
     }
 
-    public ResponseEntity<Map<String, String>> upload(MultipartFile file) {
-        try {
+    public ResponseEntity<Map<String, String>> upload(MultipartFile file) throws IOException, ParseException {
+
             List<SiteInfo> siteInfos = DataParser.parseExcelFile(file);
             String originalDataName = siteInfos.isEmpty() ? "" : siteInfos.get(0).getOriginal_data_name();
 
@@ -71,7 +71,7 @@ public class UploadService {
             MitochondrialDetail existingDetail = detailMapper.findByOriginalDataName(originalDataName);
             if (existingDetail != null) {
                 // 更新分析日期
-                existingDetail.setAnalysis_date(LocalDateTime.now());
+                existingDetail.setAnalysis_date(DateUtils.getDate());
                 existingDetail.setSample_name(siteInfos.get(0).getSample_name());
                 detailMapper.update(existingDetail);
                 // 删除相关的位点信息
@@ -81,7 +81,7 @@ public class UploadService {
                 MitochondrialDetail mitochondrialDetail = new MitochondrialDetail();
                 mitochondrialDetail.setSample_name(siteInfos.get(0).getSample_name());
                 mitochondrialDetail.setOriginal_data_name(originalDataName);
-                mitochondrialDetail.setAnalysis_date(LocalDateTime.now());
+                mitochondrialDetail.setAnalysis_date(DateUtils.getDate());
 
                 boolean flag = detailMapper.selectDuplicateChecking(mitochondrialDetail.getSample_name()) > 0;
                 if (flag) {
@@ -96,9 +96,6 @@ public class UploadService {
             }
 
             return ResponseEntity.ok().body(Map.of("message", "数据解析成功"));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("message", "数据处理失败: " + e.getMessage()));
-        }
+
     }
 }

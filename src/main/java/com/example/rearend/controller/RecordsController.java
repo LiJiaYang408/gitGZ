@@ -4,8 +4,10 @@ import com.example.rearend.mapper.MitochondrialDetailMapper;
 import com.example.rearend.model.MitochondrialDetail;
 import com.example.rearend.model.Records;
 import com.example.rearend.model.SiteInfo;
+import com.example.rearend.service.MitochondrialDetailService;
 import com.example.rearend.service.RecordsService;
 import com.example.rearend.service.UploadService;
+import com.example.rearend.service.impl.MitochondrialDetailServiceImpl;
 import com.example.rearend.utils.DataParser;
 import com.example.rearend.utils.FileNameUtils;
 import com.example.rearend.utils.ResultUtil;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -27,9 +30,9 @@ import java.util.Objects;
 public class RecordsController {
     private final RecordsService recordsService;
     private final UploadService upload;
-    private final MitochondrialDetailMapper detailMapper;
+    private final MitochondrialDetailService detailMapper;
 
-    public RecordsController(RecordsService recordsService, UploadService upload, MitochondrialDetailMapper detailMapper) {
+    public RecordsController(RecordsService recordsService, UploadService upload, MitochondrialDetailService detailMapper) {
         this.recordsService = recordsService;
         this.upload = upload;
         this.detailMapper = detailMapper;
@@ -37,7 +40,7 @@ public class RecordsController {
 
     @PostMapping("/upload")
     @Transactional(rollbackFor = Exception.class) // 添加事务注解
-    public ResultUtil<List<Records>> upload(@RequestParam("file") MultipartFile file, String uploadType,int num) throws IOException {
+    public ResultUtil<List<Records>> upload(@RequestParam("file") MultipartFile file, String uploadType,int num) throws IOException, ParseException {
         String fileName = null;
         if (Objects.equals(uploadType, "whole")) {
             Workbook workbook = new XSSFWorkbook(file.getInputStream());

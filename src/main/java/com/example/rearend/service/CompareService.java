@@ -2,33 +2,32 @@ package com.example.rearend.service;
 
 import com.example.rearend.model.MitochondrialDetail;
 import com.example.rearend.model.SiteInfo;
-import com.example.rearend.utils.CompareResult;
-import com.example.rearend.utils.DataParser;
-import com.example.rearend.utils.FileNameUtils;
-import com.example.rearend.utils.MultipartFileExample;
+import com.example.rearend.utils.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class CompareService {
 
-    private final StringRedisTemplate redisTemplate;
+    private static final String FILE_PATH_CACHE= "cache.txt";
+    private static final String FILE_PATH_OUTCOME = "outcome.txt";
     private final MitochondrialDetailService mitochondrialDetailService;
     private final RecordsService recordsService;
     private final VcfService service;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public CompareService(StringRedisTemplate redisTemplate, MitochondrialDetailService mitochondrialDetailService,
+    public CompareService(MitochondrialDetailService mitochondrialDetailService,
                           RecordsService recordsService, VcfService service) {
-        this.redisTemplate = redisTemplate;
         this.mitochondrialDetailService = mitochondrialDetailService;
         this.recordsService = recordsService;
         this.service = service;
@@ -84,16 +83,16 @@ public class CompareService {
      * @param sampleName2 第二个样本名称
      * @return 比较结果列表
      */
-    public List<CompareResult> compareData(String sampleName1, String sampleName2) {
+    public List<CompareResult> compareData(String sampleName1, String sampleName2) throws IOException {
         // 记录比较信息
         List<SiteInfo> siteInfos = mitochondrialDetailService.getMitochondrialDetailDetails(sampleName1);
         MitochondrialDetail mitochondrialDetail1 = mitochondrialDetailService.findByOriginalDataName(sampleName1);
         MitochondrialDetail mitochondrialDetail2 = mitochondrialDetailService.findByOriginalDataName(sampleName2);
         recordsService.Comparison(siteInfos, mitochondrialDetail1, mitochondrialDetail2, new ArrayList<>());
 
-        String redisKey = "compare:" + sampleName1 + ":" + sampleName2;
-        // 先从 Redis 中获取结果
-        List<CompareResult> cachedResult = getResultFromRedis(redisKey);
+        String fileKey = "compare:" + sampleName1 + ":" + sampleName2;
+        // 先从文件中获取结果
+        List<CompareResult> cachedResult = getResultFromFile(fileKey);
         if (cachedResult != null && !cachedResult.isEmpty()) {
             return cachedResult;
         }
@@ -103,8 +102,8 @@ public class CompareService {
 
         List<CompareResult> compareResult = compareMaps(targetData, dbData);
 
-        // 将结果存入 Redis
-        saveResultToRedis(redisKey, compareResult);
+        // 将结果存入文件
+        saveResultToFile(fileKey, compareResult);
 
         return compareResult;
     }
@@ -115,7 +114,7 @@ public class CompareService {
      * @param list2 第二个 SiteInfo 列表
      * @return 比较结果列表
      */
-    public List<CompareResult> complexityCompareData(List<SiteInfo> list1, List<SiteInfo> list2,boolean flag) {
+    public List<CompareResult> complexityCompareData(List<SiteInfo> list1, List<SiteInfo> list2, boolean flag) throws IOException {
         // 初始化线粒体详细信息
         MitochondrialDetail mitochondrialDetail1 = new MitochondrialDetail();
         mitochondrialDetail1.setSample_name(list1.get(0).getSample_name());
@@ -128,48 +127,101 @@ public class CompareService {
         if (flag) {
             recordsService.Comparison(list1, mitochondrialDetail1, mitochondrialDetail2, list2);
         }
-        String redisKey = "complexity:" + list1.get(0).getOriginal_data_name() + ":" + list2.get(0).getOriginal_data_name();
+        String fileKey = "complexity:" + list1.get(0).getOriginal_data_name() + ":" + list2.get(0).getOriginal_data_name();
 
+        List<CompareResult> cachedResult = getResultFromFile(fileKey);
+        if (cachedResult != null && !cachedResult.isEmpty()) {
+            return cachedResult;
+        }
         List<Map<String, Object>> targetData = convertToMapList(list1);
         List<Map<String, Object>> dbData = convertToMapList(list2);
 
         List<CompareResult> compareResult = compareMaps(targetData, dbData);
 
-        // 将结果存入 Redis
-        saveResultToRedis(redisKey, compareResult);
+        // 将结果存入文件
+        saveResultToFile(fileKey, compareResult);
 
         return compareResult;
     }
 
+
     /**
-     * 从 Redis 中获取比较结果
-     * @param redisKey Redis 键
-     * @return 比较结果列表，如果不存在则返回 null
+     * 从文件中获取比较结果
+     *
+     @param fileKey
+     文件键
+     *
+     @return
+     比较结果列表，如果不存在则返回 null
      */
-    private List<CompareResult> getResultFromRedis(String redisKey) {
-        String resultJson = redisTemplate.opsForValue().get(redisKey);
-        if (resultJson != null && !resultJson.equals("[]")) {
-            try {
-                return objectMapper.readValue(resultJson, new TypeReference<List<CompareResult>>() {});
-            } catch (IOException e) {
-                // 记录异常信息，避免异常信息丢失
-                System.err.println("Failed to read value from Redis: " + e.getMessage());
+    private List<CompareResult> getResultFromFile(String fileKey) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH_OUTCOME))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(":", 2);
+                if (parts.length == 2 && parts[0].equals(fileKey)) {
+                    // 解密数据
+                    String decryptedJson = AESUtils.decrypt(parts[1]);
+                    return objectMapper.readValue(decryptedJson, new TypeReference<List<CompareResult>>() {});
+                }
             }
+        } catch (Exception e) {
+            // 记录异常信息，避免异常信息丢失
+            System.err.println("Failed to read value from file: " + e.getMessage());
+        }finally {
+            AESUtils.clearFile(FILE_PATH_CACHE);
         }
         return null;
     }
 
+
     /**
-     * 将比较结果保存到 Redis
-     * @param redisKey Redis 键
-     * @param result 比较结果列表
+     * 将比较结果保存到文件
+     *
+     @param fileKey
+     文件键
+     *
+     @param result
+     比较结果列表
      */
-    private void saveResultToRedis(String redisKey, List<CompareResult> result) {
-        try {
-            redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(result));
-        } catch (IOException e) {
+    private void saveResultToFile(String fileKey, List<CompareResult> result) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH_OUTCOME, true))) {
+            String resultJson = objectMapper.writeValueAsString(result);
+            // 加密数据
+            String encryptedJson = AESUtils.encrypt(resultJson);
+            writer
+                    .write(fileKey + ":" + encryptedJson);
+            writer
+                    .newLine();
+        } catch (Exception e) {
             // 记录异常信息，避免异常信息丢失
-            System.err.println("Failed to save result to Redis: " + e.getMessage());
+            System.err.println("Failed to save result to file: " + e.getMessage());
+        }
+    }
+
+
+
+    /**
+     * 将Map列表保存到文件
+     *
+     @param fileKey
+     文件键
+     *
+     @param result
+     Map列表
+     */
+    private void saveMapListToFile(String fileKey, List<Map<String, Object>> result) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH_CACHE, true))) {
+            String resultJson = objectMapper.writeValueAsString(result);
+            // 加密数据
+            String encryptedJson = AESUtils.encrypt(resultJson);
+            writer
+                    .write(fileKey + ":" + encryptedJson);
+            writer
+                    .newLine();
+        } catch (Exception e) {
+            // 记录异常信息，避免异常信息丢失
+            System.err.println("Failed to save map list to file: " + e.getMessage());
         }
     }
 
@@ -244,7 +296,7 @@ public class CompareService {
     }
 
     /**
-     * 解析 Excel 文件并将解析后的数据存储到 Redis
+     * 解析 Excel 文件并将解析后的数据存储到文件
      * @param file Excel 文件
      * @return 样本名称，如果解析失败则返回 null
      * @throws IOException 文件解析异常
@@ -257,14 +309,14 @@ public class CompareService {
         }
         // 获取样本名
         String sampleName = siteInfos.get(0).getSample_name();
-        // 将解析后的数据存储到 Redis
-        String redisKey = "sample:" + sampleName;
-        redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(convertToMapList(siteInfos)));
+        // 将解析后的数据存储到文件
+        String fileKey = "sample" + sampleName;
+        saveMapListToFile(fileKey, convertToMapList(siteInfos));
         return sampleName;
     }
 
     /**
-     * 解析 VCF 文件并将解析后的数据存储到 Redis
+     * 解析 VCF 文件并将解析后的数据存储到文件
      * @param file VCF 文件
      * @return 样本名称，如果解析失败则返回 null
      * @throws IOException 文件解析异常
@@ -277,27 +329,37 @@ public class CompareService {
         if (siteInfos.isEmpty()) {
             return null;
         }
-        // 将解析后的数据存储到 Redis
-        String redisKey = "sample:" + fileName;
-        redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(convertToMapList(siteInfos)));
+        // 将解析后的数据存储到文件
+        String fileKey = "sample" + fileName;
+        saveMapListToFile(fileKey, convertToMapList(siteInfos));
         return fileName;
     }
 
+
     /**
-     * 从 Redis 中获取解析后的数据
-     * @param sampleName 样本名称
-     * @return 解析后的数据列表，如果不存在则返回 null
+     * 从文件中获取解析后的数据
+     *
+     @param sampleName
+     样本名称
+     *
+     @return
+     解析后的数据列表，如果不存在则返回 null
      */
     public List<Map<String, Object>> getParsedDataFromRedis(String sampleName) {
-        String redisKey = "sample:" + sampleName;
-        String resultJson = redisTemplate.opsForValue().get(redisKey);
-        if (resultJson != null && !resultJson.equals("[]")) {
-            try {
-                return objectMapper.readValue(resultJson, new TypeReference<List<Map<String, Object>>>() {});
-            } catch (IOException e) {
-                // 记录异常信息，避免异常信息丢失
-                System.err.println("Failed to read parsed data from Redis: " + e.getMessage());
+        String fileKey = "sample" + sampleName;
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH_CACHE))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(":", 2);
+                if (parts.length == 2 && parts[0].equals(fileKey)) {
+                    // 解密数据
+                    String decryptedJson = AESUtils.decrypt(parts[1]);
+                    return objectMapper.readValue(decryptedJson, new TypeReference<List<Map<String, Object>>>() {});
+                }
             }
+        } catch (Exception e) {
+            // 记录异常信息，避免异常信息丢失
+            System.err.println("Failed to read parsed data from file: " + e.getMessage());
         }
         return null;
     }
