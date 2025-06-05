@@ -10,7 +10,7 @@ public class Records {
     private String goal_name;
     private String compare_name;
     private Integer allowance;
-    private LocalDateTime time;
+    private String time;
     private String original_goal;
     private String original_compare;
     private int status;

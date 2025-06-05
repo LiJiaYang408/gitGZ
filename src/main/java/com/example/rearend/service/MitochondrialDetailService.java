@@ -2,18 +2,19 @@ package com.example.rearend.service;
 
 import com.example.rearend.model.MitochondrialDetail;
 import com.example.rearend.model.SiteInfo;
-import org.apache.ibatis.annotations.Param;
 
+
+import java.io.IOException;
 import java.util.List;
 
 public interface MitochondrialDetailService {
-    List<MitochondrialDetail> getAllMitochondrialDetail();
+    List<MitochondrialDetail> getAllMitochondrialDetail() throws IOException;
 
-    List<SiteInfo> getMitochondrialDetailDetails(@Param("name") String name);
+    List<SiteInfo> getMitochondrialDetailDetails(String name);
 
     Integer insert(MitochondrialDetail detail);
 
-    Integer selectDuplicateChecking(@Param("name")String name);
+    Integer selectDuplicateChecking(String name);
 
     void update(MitochondrialDetail mitochondrialDetail);
 

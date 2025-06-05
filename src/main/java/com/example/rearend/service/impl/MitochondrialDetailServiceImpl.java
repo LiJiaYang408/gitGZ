@@ -1,11 +1,11 @@
 package com.example.rearend.service.impl;
 
-import com.example.rearend.mapper.MitochondrialDetailMapper;
 import com.example.rearend.model.MitochondrialDetail;
 import com.example.rearend.model.SiteInfo;
 import com.example.rearend.service.MitochondrialDetailService;
 import com.example.rearend.utils.AESUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -18,15 +18,27 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MitochondrialDetailServiceImpl implements MitochondrialDetailService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private static final String FILE_PATH_Mit= "mitochondrial_detail.txt";
-    private final MitochondrialDetailMapper mitochondrialDetailMapper;
+    private static String FILE_PATH_Mit;
+    private static String FILE_PATH_OUTCOME;
+    private static String FILE_PATH_Sit;
 
-    public MitochondrialDetailServiceImpl(MitochondrialDetailMapper mitochondrialDetailMapper) {
-        this.mitochondrialDetailMapper = mitochondrialDetailMapper;
+    @Value("${file.mitochondrial_detail}")
+    public void setFILE_PATH_Mit(String file_path_mit) {
+        FILE_PATH_Mit = file_path_mit;
+    }
+
+    @Value("${file.outcome}")
+    public void setFILE_PATH_OUTCOME(String file_path_outcome) {
+        FILE_PATH_OUTCOME = file_path_outcome;
+    }
+
+    @Value("${file.site_info}")
+    public void setFILE_PATH_Sit(String file_path_sit) {
+        FILE_PATH_Sit = file_path_sit;
     }
 
     @Override
-    public List<MitochondrialDetail> getAllMitochondrialDetail() {
+    public List<MitochondrialDetail> getAllMitochondrialDetail() throws IOException {
         List<MitochondrialDetail> details = new ArrayList<>();
         File file = new File(FILE_PATH_Mit);
         if (!file.exists()) {
@@ -49,13 +61,41 @@ public class MitochondrialDetailServiceImpl implements MitochondrialDetailServic
             }
         } catch (IOException e) {
             System.err.println("读取文件失败: " + e.getMessage());
+        } finally {
+            AESUtils.clearFile(FILE_PATH_OUTCOME);
         }
         return details;
     }
 
     @Override
     public List<SiteInfo> getMitochondrialDetailDetails(String name) {
-        return mitochondrialDetailMapper.getMitochondrialDetailDetails(name);
+        List<SiteInfo> siteInfos = new ArrayList<>();
+        File file = new File(FILE_PATH_Sit);
+        if (!file.exists()) {
+            System.err.println("文件不存在: " + FILE_PATH_Sit);
+            return siteInfos;
+        }
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                try {
+                    int colonIndex = line.indexOf(':');
+                    if (colonIndex == -1) continue; // 跳过格式错误的行
+                    String currentName = line.substring(0, colonIndex);
+                    if (currentName.equals(name)) {
+                        String encryptedJson = line.substring(colonIndex + 1);
+                        String decryptedJson = AESUtils.decrypt(encryptedJson);
+                        SiteInfo siteInfo = objectMapper.readValue(decryptedJson, SiteInfo.class);
+                        siteInfos.add(siteInfo);
+                    }
+                } catch (Exception e) {
+                    System.err.println("解析文件行失败: " + e.getMessage());
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("读取文件失败: " + e.getMessage());
+        }
+        return siteInfos;
     }
 
     @Override
@@ -63,10 +103,8 @@ public class MitochondrialDetailServiceImpl implements MitochondrialDetailServic
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH_Mit, true))) {
             String resultJson = objectMapper.writeValueAsString(detail);
             String encryptedJson = AESUtils.encrypt(resultJson);
-            writer
-                    .write(detail.getOriginal_data_name() + ":" + encryptedJson);
-            writer
-                    .newLine();
+            writer.write(detail.getOriginal_data_name() + ":" + encryptedJson);
+            writer.newLine();
         } catch (Exception e) {
             // 记录异常信息，避免异常信息丢失
             System.err.println("Failed to save result to file: " + e.getMessage());

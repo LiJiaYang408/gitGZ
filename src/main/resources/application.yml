@@ -1,20 +1,16 @@
 spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/jiayang?useSSL=false&serverTimezone=UTC
-    username: root
-    password: DeepReads123!
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
   web:
     resources:
       static-locations: classpath:/dist/
 
-mybatis:
-  mapper-locations: classpath:mapper/*.xml
-  type-aliases-package: com.example.demo.model
-
 server:
   port: 5028
 
+Mta:
+  secret-key: SXJYDeepReads123
 
-
+file:
+  site_info: "src/main/resources/txt/site_info.txt"
+  mitochondrial_detail: "src/main/resources/txt/mitochondrial_detail.txt"
+  outcome: "src/main/resources/txt/outcome.txt"
+  records: "src/main/resources/txt/records.txt"

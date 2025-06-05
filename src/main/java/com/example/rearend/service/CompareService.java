@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,8 +20,8 @@ import java.util.Map;
 @Service
 public class CompareService {
 
-    private static final String FILE_PATH_CACHE= "cache.txt";
-    private static final String FILE_PATH_OUTCOME = "outcome.txt";
+    private static final String FILE_PATH_CACHE= "src/main/resources/txt/cache.txt";
+    private static final String FILE_PATH_OUTCOME = "src/main/resources/txt/outcome.txt";
     private final MitochondrialDetailService mitochondrialDetailService;
     private final RecordsService recordsService;
     private final VcfService service;
@@ -83,7 +84,7 @@ public class CompareService {
      * @param sampleName2 第二个样本名称
      * @return 比较结果列表
      */
-    public List<CompareResult> compareData(String sampleName1, String sampleName2) throws IOException {
+    public List<CompareResult> compareData(String sampleName1, String sampleName2) throws IOException, ParseException {
         // 记录比较信息
         List<SiteInfo> siteInfos = mitochondrialDetailService.getMitochondrialDetailDetails(sampleName1);
         MitochondrialDetail mitochondrialDetail1 = mitochondrialDetailService.findByOriginalDataName(sampleName1);
@@ -114,7 +115,7 @@ public class CompareService {
      * @param list2 第二个 SiteInfo 列表
      * @return 比较结果列表
      */
-    public List<CompareResult> complexityCompareData(List<SiteInfo> list1, List<SiteInfo> list2, boolean flag) throws IOException {
+    public List<CompareResult> complexityCompareData(List<SiteInfo> list1, List<SiteInfo> list2, boolean flag) throws IOException, ParseException {
         // 初始化线粒体详细信息
         MitochondrialDetail mitochondrialDetail1 = new MitochondrialDetail();
         mitochondrialDetail1.setSample_name(list1.get(0).getSample_name());

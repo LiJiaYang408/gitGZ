@@ -1,5 +1,8 @@
 package com.example.rearend.utils;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -9,13 +12,19 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+@Component
 public class AESUtils {
     // AES密钥长度，可选128、192、256位
     private static final int KEY_SIZE = 128;
     // 加密算法/工作模式/填充方式
     private static final String TRANSFORMATION = "AES/ECB/PKCS5Padding";
-    // 密钥（生产环境建议从配置文件或环境变量获取）
-    private static final String SECRET_KEY = "SXJYDeepReads123"; // 必须是16/24/32字节长度
+
+    private static String SECRET_KEY;
+
+    @Value("${Mta.secret-key}")
+    public void setSecretKey(String secretKey) {
+        SECRET_KEY = secretKey;
+    }
 
     /**
      * 生成AES密钥

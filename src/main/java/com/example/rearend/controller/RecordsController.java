@@ -1,13 +1,11 @@
 package com.example.rearend.controller;
 
-import com.example.rearend.mapper.MitochondrialDetailMapper;
 import com.example.rearend.model.MitochondrialDetail;
 import com.example.rearend.model.Records;
 import com.example.rearend.model.SiteInfo;
 import com.example.rearend.service.MitochondrialDetailService;
 import com.example.rearend.service.RecordsService;
 import com.example.rearend.service.UploadService;
-import com.example.rearend.service.impl.MitochondrialDetailServiceImpl;
 import com.example.rearend.utils.DataParser;
 import com.example.rearend.utils.FileNameUtils;
 import com.example.rearend.utils.ResultUtil;

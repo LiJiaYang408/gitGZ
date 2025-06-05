@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +29,7 @@ public class ComparisonController {
 
     //简单比对
     @GetMapping("/compare")
-    public List<CompareResult> compare(@RequestParam String sampleName1, @RequestParam String sampleName2) throws IOException {
+    public List<CompareResult> compare(@RequestParam String sampleName1, @RequestParam String sampleName2) throws IOException, ParseException {
         return compareService.compareData(sampleName1, sampleName2);
     }
 
@@ -38,7 +39,7 @@ public class ComparisonController {
                                                  @RequestParam String name1,
                                                  @RequestParam String sampleName2,
                                                  @RequestParam String name2,
-                                                 @RequestParam(defaultValue = "true",required = false) boolean flag) throws IOException {
+                                                 @RequestParam(defaultValue = "true",required = false) boolean flag) throws IOException, ParseException {
         List<SiteInfo>list1;
         if (sampleName1.equals("null")){
             list1=compareService.convertToSiteInfoList(compareService.getParsedDataFromRedis(name1));

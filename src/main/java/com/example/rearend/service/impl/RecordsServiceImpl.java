@@ -1,14 +1,20 @@
 package com.example.rearend.service.impl;
 
-import com.example.rearend.mapper.MitochondrialDetailMapper;
-import com.example.rearend.mapper.RecordsMapper;
 import com.example.rearend.model.MitochondrialDetail;
 import com.example.rearend.model.Records;
 import com.example.rearend.model.SiteInfo;
+import com.example.rearend.service.MitochondrialDetailService;
 import com.example.rearend.service.RecordsService;
+import com.example.rearend.utils.AESUtils;
+import com.example.rearend.utils.DateUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,17 +23,21 @@ import java.util.Objects;
  */
 @Service
 public class RecordsServiceImpl implements RecordsService {
-    private final RecordsMapper mapper;
-    private final MitochondrialDetailMapper detailMapper;
+    private final MitochondrialDetailService detailMapper;
+    private static String FILE_PATH_REC;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Value("${file.records}")
+    public void setFILE_PATH_REC(String file_path_rec) {
+        FILE_PATH_REC = file_path_rec;
+    }
 
     /**
      * 构造函数，注入 RecordsMapper 和 MitochondrialDetailMapper。
      *
-     * @param mapper       用于操作 Records 数据的 Mapper
      * @param detailMapper 用于操作 MitochondrialDetail 数据的 Mapper
      */
-    public RecordsServiceImpl(RecordsMapper mapper, MitochondrialDetailMapper detailMapper) {
-        this.mapper = mapper;
+    public RecordsServiceImpl(MitochondrialDetailService detailMapper) {
         this.detailMapper = detailMapper;
     }
 
@@ -39,7 +49,22 @@ public class RecordsServiceImpl implements RecordsService {
      */
     @Override
     public List<Records> findByGoalName(String goalName) {
-        return mapper.findByGoalName(goalName);
+        List<Records> result = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH_REC))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(":", 2);
+                if (parts.length == 2 && parts[0].equals(goalName)) {
+                    String encryptedJson = parts[1];
+                    String decryptedJson = AESUtils.decrypt(encryptedJson);
+                    Records records = objectMapper.readValue(decryptedJson, Records.class);
+                    result.add(records);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to read records from file: " + e.getMessage());
+        }
+        return result;
     }
 
     /**
@@ -50,7 +75,16 @@ public class RecordsServiceImpl implements RecordsService {
      */
     @Override
     public int insert(Records records) {
-        return mapper.insert(records);
+        try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter(FILE_PATH_REC, true))) {
+            String resultJson = objectMapper.writeValueAsString(records);
+            String encryptedJson = AESUtils.encrypt(resultJson);
+            writer.write(records.getGoal_name() + ":" + encryptedJson);
+            writer.newLine();
+        } catch (Exception e) {
+            // 记录异常信息，避免异常信息丢失
+            System.err.println("Failed to save result to file: " + e.getMessage());
+        }
+        return 1;
     }
 
     /**
@@ -63,7 +97,7 @@ public class RecordsServiceImpl implements RecordsService {
      * @return 创建的 Records 对象
      */
     @Override
-    public Records Comparison(List<SiteInfo> list, MitochondrialDetail mit, MitochondrialDetail detail, List<SiteInfo> list2) {
+    public Records Comparison(List<SiteInfo> list, MitochondrialDetail mit, MitochondrialDetail detail, List<SiteInfo> list2) throws ParseException {
         Records records = new Records();
         List<SiteInfo> siteInfoList;
         if (list2.size() == 0) {
@@ -88,7 +122,7 @@ public class RecordsServiceImpl implements RecordsService {
      * @return 创建的 Records 对象，如果不满足条件则返回空属性的 Records 对象
      */
     @Override
-    public Records Compare(List<SiteInfo> list, MitochondrialDetail mit, MitochondrialDetail detail,int num1) {
+    public Records Compare(List<SiteInfo> list, MitochondrialDetail mit, MitochondrialDetail detail, int num1) throws ParseException {
         Records records = new Records();
         List<SiteInfo> siteInfoList = detailMapper.getMitochondrialDetailDetails(detail.getOriginal_data_name());
 
@@ -165,7 +199,7 @@ public class RecordsServiceImpl implements RecordsService {
                 break;
             }
         }
-        return result <= num && flag;
+        return result >= num && flag;
     }
 
     /**
@@ -176,9 +210,9 @@ public class RecordsServiceImpl implements RecordsService {
      * @param detail  另一个线粒体详细信息对象
      * @param result  允许的差异数量
      */
-    private void setupRecord(Records records, MitochondrialDetail mit, MitochondrialDetail detail, int result) {
+    private void setupRecord(Records records, MitochondrialDetail mit, MitochondrialDetail detail, int result) throws ParseException {
         records.setAllowance(result);
-        records.setTime(LocalDateTime.now());
+        records.setTime(DateUtils.getDate());
         records.setGoal_name(mit.getSample_name());
         records.setCompare_name(detail.getSample_name());
         records.setOriginal_goal(mit.getOriginal_data_name());
@@ -192,6 +226,21 @@ public class RecordsServiceImpl implements RecordsService {
      */
     @Override
     public List<Records> findAll() {
-        return mapper.findAll();
+        List<Records> result = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH_REC))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(":", 2);
+                if (parts.length == 2) {
+                    String encryptedJson = parts[1];
+                    String decryptedJson = AESUtils.decrypt(encryptedJson);
+                    Records records = objectMapper.readValue(decryptedJson, Records.class);
+                    result.add(records);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to read records from file: " + e.getMessage());
+        }
+        return result;
     }
 }
