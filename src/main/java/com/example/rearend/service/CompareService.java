@@ -248,26 +248,19 @@ public class CompareService {
             } else if (!found.get("mutant_base").equals(targetItem.get("mutant_base"))) {
                 compareResult.add(createCompareResult(targetItem, found.get("mutant_base").toString(), basePosition));
             }
+            // 移除已经处理过的 dbData 中的项
+            dbMap.remove(basePosition);
         }
 
-        // 遍历对比样本数据
-        for (Map<String, Object> dbItem : dbData) {
-            String basePosition = dbItem.get("base_position").toString();
-            boolean found = false;
-            for (Map<String, Object> targetItem : targetData) {
-                if (targetItem.get("base_position").equals(basePosition)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                compareResult.add(createCompareResult(dbItem, dbItem.get("mutant_base").toString(), basePosition, true));
-            }
+        // 处理 dbData 中剩余的项
+        for (Map.Entry<String, Map<String, Object>> entry : dbMap.entrySet()) {
+            Map<String, Object> dbItem = entry.getValue();
+            String basePosition = entry.getKey();
+            compareResult.add(createCompareResult(dbItem, dbItem.get("mutant_base").toString(), basePosition, true));
         }
 
         return compareResult;
     }
-
     /**
      * 创建比较结果对象
      * @param item 数据项
@@ -310,6 +303,9 @@ public class CompareService {
         }
         // 获取样本名
         String sampleName = siteInfos.get(0).getSample_name();
+        if (sampleName.equals("")){
+            sampleName=siteInfos.get(0).getOriginal_data_name();
+        }
         // 将解析后的数据存储到文件
         String fileKey = "sample" + sampleName;
         saveMapListToFile(fileKey, convertToMapList(siteInfos));
