@@ -58,6 +58,14 @@ public class VcfService {
             return null; // 只处理 filter 为 "PASS" 的变体
         }
 
+        // 识别 SNP 和 INDEL
+        String variantType="SNP";
+        if (ref.length() == 1 && alt.length() == 1) {
+            variantType = "SNP";
+        } else if (ref.length() > 1 || alt.length() > 1) {
+            variantType = "INDEL";
+        }
+
         // 提取 DP 值
         int dp = Arrays.stream(info.split(";"))
                 .filter(infoPart -> infoPart.startsWith("DP="))
@@ -82,7 +90,7 @@ public class VcfService {
                 .map(String::valueOf)
                 .collect(Collectors.joining(","));
 
-        return String.format("%s;%s;%d;%.2f%%;%s", pos + ref, alt, dp, percentage, dp4Sorted);
+        return String.format("%s;%s;%s;%d;%.2f%%;%s", pos + ref, alt,variantType, dp, percentage, dp4Sorted);
     }
 
     private void writeBassesListToTxt(List<String> bassesList, String outputFilePath) {

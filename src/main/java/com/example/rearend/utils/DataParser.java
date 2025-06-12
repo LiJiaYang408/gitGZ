@@ -49,7 +49,11 @@ public class DataParser {
                 siteInfo.setBase_position(basePosition);
                 siteInfo.setHeterogeneity(heterogeneity);
                 siteInfo.setType(type);
-                siteInfo.setSample_name(sampleName);
+                if (sampleName.equals("")){
+                    siteInfo.setSample_name(originalDataName);
+                }else {
+                    siteInfo.setSample_name(sampleName);
+                }
                 siteInfos.add(siteInfo);
             }
 

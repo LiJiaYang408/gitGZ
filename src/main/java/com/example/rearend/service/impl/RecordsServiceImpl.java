@@ -145,11 +145,9 @@ public class RecordsServiceImpl implements RecordsService {
      */
     private int calculateMatchingCount(List<SiteInfo> siteInfoList, List<SiteInfo> list) {
         int num = 0;
-        boolean flag = false;
         for (SiteInfo siteInfo : siteInfoList) {
             for (SiteInfo info : list) {
                 if (!siteInfo.getOriginal_data_name().equals(info.getOriginal_data_name())) {
-                    flag = true;
                     if (Objects.equals(siteInfo.getBase_position(), info.getBase_position())) {
                         if (siteInfo.getMutant_base().equals(info.getMutant_base())) {
                             num++;
@@ -157,8 +155,6 @@ public class RecordsServiceImpl implements RecordsService {
                         }
                         num++;
                     }
-                } else {
-                    flag = false;
                 }
             }
         }
@@ -174,7 +170,7 @@ public class RecordsServiceImpl implements RecordsService {
      * @return 允许的差异数量
      */
     private int calculateAllowance(List<SiteInfo> siteInfoList, List<SiteInfo> list, int num) {
-        return siteInfoList.size() + list.size() - num;
+        return siteInfoList.size() + list.size() - (num*2);
     }
 
     /**
